@@ -859,7 +859,7 @@ impl QuestContract {
         Self::require_not_paused(&env)?;
         let mut quest = Self::load_quest(&env, quest_id)?;
         Self::require_quest_operator(&env, &quest, &actor)?;
-        if reason.len() == 0 || reason.len() > MAX_QUEST_DESCRIPTION_LEN {
+        if reason.is_empty() || reason.len() > MAX_QUEST_DESCRIPTION_LEN {
             return Err(Error::InvalidInput);
         }
         if quest.status != QuestStatus::Active {
@@ -1886,7 +1886,7 @@ impl QuestContract {
                     .persistent()
                     .get(&DataKey::PublicCategoryQuests(cat.clone()))
                     .unwrap_or(Vec::new(&env));
-                if ids.len() > 0 {
+                if !ids.is_empty() {
                     active.push_back(cat);
                 } else {
                     cleaned += 1;

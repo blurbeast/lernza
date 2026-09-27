@@ -865,7 +865,7 @@ impl MilestoneContract {
         }
         let mut indegree: Vec<u32> = Vec::new(env);
         for id in 0..total {
-            indegree.push_back(prerequisites.get(id).unwrap().len() as u32);
+            indegree.push_back(prerequisites.get(id).unwrap().len());
             for p in prerequisites.get(id).unwrap().iter() {
                 if p >= total {
                     return Err(Error::InvalidInput);
@@ -2699,7 +2699,7 @@ impl MilestoneContract {
         if reason.len() > MAX_DISPUTE_REASON_LEN {
             return Err(Error::DisputeReasonTooLong);
         }
-        if reason.len() == 0 {
+        if reason.is_empty() {
             return Err(Error::InvalidInput);
         }
 
@@ -3074,11 +3074,16 @@ impl MilestoneContract {
     }
 
     /// True when a dispute is currently awaiting a ruling (Pending or Escalated).
-    pub fn has_open_dispute(env: Env, quest_id: u32, milestone_id: u32, enrollee: Address) -> bool {
-        match Self::get_dispute_status(env, quest_id, milestone_id, enrollee) {
-            Some(DisputeStatus::Pending) | Some(DisputeStatus::Escalated) => true,
-            _ => false,
-        }
+    pub fn has_open_dispute(
+        env: Env,
+        quest_id: u32,
+        milestone_id: u32,
+        enrollee: Address,
+    ) -> bool {
+        matches!(
+            Self::get_dispute_status(env, quest_id, milestone_id, enrollee),
+            Some(DisputeStatus::Pending) | Some(DisputeStatus::Escalated)
+        )
     }
 
     /// Remaining cooldown, in seconds, before `enrollee` may open another
@@ -3101,11 +3106,7 @@ impl MilestoneContract {
 
         let now = env.ledger().timestamp();
         let eligible_at = last.saturating_add(DISPUTE_COOLDOWN_SECONDS);
-        if now >= eligible_at {
-            0
-        } else {
-            eligible_at - now
-        }
+        eligible_at.saturating_sub(now)
     }
 
     /// Page through every dispute ever opened on a quest, oldest first.

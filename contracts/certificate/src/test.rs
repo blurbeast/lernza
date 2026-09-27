@@ -424,7 +424,7 @@ fn test_revoke_only_removes_target_certificate_from_user_list() {
 
 #[test]
 fn test_mint_quest_certificate_decoupled_flow() {
-    let (env, client, owner) = setup();
+    let (env, client, _owner) = setup();
     let recipient = Address::generate(&env);
 
     let cert_id = client.mint_quest_certificate(
