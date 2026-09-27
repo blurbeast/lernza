@@ -53,7 +53,7 @@ export function Step3Review({ onComplete }: Step3ReviewProps) {
         throw new Error("Quest must be created before funding. Create the quest first.")
       }
       const verifiedToken = await getVerifiedRewardToken()
-      const amount = BigInt(totalReward) * BigInt(10 ** verifiedToken.decimals)
+      const amount = BigInt(totalReward) * (10n ** BigInt(verifiedToken.decimals))
       const result = await rewardsClient.fundQuest(address, createdQuestId, amount)
       if (result.status === "FAILED") {
         throw new Error(result.error || "Funding failed")
@@ -115,7 +115,7 @@ export function Step3Review({ onComplete }: Step3ReviewProps) {
       // Create milestones on-chain
       for (let i = 0; i < step2Data.milestones.length; i++) {
         const m = step2Data.milestones[i]
-        const rewardAmount = BigInt(m.rewardAmount) * BigInt(1_000_000)
+        const rewardAmount = BigInt(m.rewardAmount) * (10n ** BigInt(verifiedToken.decimals))
         await milestoneClient.createMilestoneWithPrerequisites(
           address,
           questId,

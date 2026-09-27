@@ -2505,6 +2505,39 @@ fn test_category_management_functions() {
         &String::from_str(&env, "Desc 3"),
         &cat_duplicate,
         &Vec::new(&env),
+        &token,
+        &Visibility::Public,
+        &None,
+        &None,
+    );
+
+    // 1. List categories with pagination
+    let categories = client.list_categories(&0, &10);
+    assert_eq!(categories.len(), 3);
+    assert!(categories.contains(&cat_rust));
+    assert!(categories.contains(&cat_stellar));
+    assert!(categories.contains(&cat_duplicate));
+
+    // 2. Category quest counts
+    assert_eq!(client.category_quest_count(&cat_rust), 1);
+    assert_eq!(client.category_quest_count(&cat_stellar), 1);
+    assert_eq!(client.category_quest_count(&cat_duplicate), 1);
+
+    // 3. Admin merges duplicate category "RustLang" into "Rust"
+    let merged_count = client.merge_categories(&cat_duplicate, &cat_rust);
+    assert_eq!(merged_count, 1);
+
+    // Verify consolidated category
+    assert_eq!(client.category_quest_count(&cat_rust), 2);
+    assert_eq!(client.category_quest_count(&cat_duplicate), 0);
+
+    let q3_info = client.get_quest(&q3);
+    assert_eq!(q3_info.category, cat_rust);
+
+    // 4. Clean up empty categories
+    let cleaned = client.cleanup_empty_categories();
+    assert_eq!(cleaned, 0);
+}
 // ── Ownership transfer tests (#1471) ────────────────────────────────────────
 
 #[test]
@@ -2843,7 +2876,6 @@ fn test_owner_force_add_bypasses_cap() {
     assert!(enrollees.contains(&e2));
 }
 
-
 #[test]
 fn test_removal_before_completion_is_authorized_and_cleans_enrollment() {
     let (env, client, owner, token) = setup();
@@ -2857,7 +2889,10 @@ fn test_removal_before_completion_is_authorized_and_cleans_enrollment() {
 
     // Re-enrollment starts clean and is not blocked by stale removal state.
     client.add_enrollee(&quest_id, &learner);
-    assert_eq!(client.get_enrollee_status(&quest_id, &learner), EnrolleeStatus::Active);
+    assert_eq!(
+        client.get_enrollee_status(&quest_id, &learner),
+        EnrolleeStatus::Active
+    );
 }
 
 #[test]
@@ -2897,7 +2932,10 @@ fn test_removal_after_completion_state_does_not_retain_enrollment_state() {
 
     // Re-enrollment resets the prior inactive status to the default active state.
     client.add_enrollee(&quest_id, &learner);
-    assert_eq!(client.get_enrollee_status(&quest_id, &learner), EnrolleeStatus::Active);
+    assert_eq!(
+        client.get_enrollee_status(&quest_id, &learner),
+        EnrolleeStatus::Active
+    );
 }
 
 #[test]
@@ -2909,10 +2947,7 @@ fn test_owner_can_suspend_and_resume_with_notice() {
     client.suspend_quest(&quest_id, &owner, &reason);
     let suspended = client.get_quest(&quest_id);
     assert_eq!(suspended.status, QuestStatus::Suspended);
-    assert_eq!(
-        client.get_suspension(&quest_id).unwrap().reason,
-        reason
-    );
+    assert_eq!(client.get_suspension(&quest_id).unwrap().reason, reason);
 
     client.resume_quest(&quest_id, &owner);
     assert_eq!(client.get_quest(&quest_id).status, QuestStatus::Active);
@@ -2958,36 +2993,6 @@ fn test_create_quest_with_valid_metadata_uri() {
         &Visibility::Public,
         &None,
         &None,
-    );
-
-    // 1. List categories with pagination
-    let categories = client.list_categories(&0, &10);
-    assert_eq!(categories.len(), 3);
-    assert!(categories.contains(&cat_rust));
-    assert!(categories.contains(&cat_stellar));
-    assert!(categories.contains(&cat_duplicate));
-
-    // 2. Category quest counts
-    assert_eq!(client.category_quest_count(&cat_rust), 1);
-    assert_eq!(client.category_quest_count(&cat_stellar), 1);
-    assert_eq!(client.category_quest_count(&cat_duplicate), 1);
-
-    // 3. Admin merges duplicate category "RustLang" into "Rust"
-    let merged_count = client.merge_categories(&cat_duplicate, &cat_rust);
-    assert_eq!(merged_count, 1);
-
-    // Verify consolidated category
-    assert_eq!(client.category_quest_count(&cat_rust), 2);
-    assert_eq!(client.category_quest_count(&cat_duplicate), 0);
-
-    let q3_info = client.get_quest(&q3);
-    assert_eq!(q3_info.category, cat_rust);
-
-    // 4. Clean up empty categories
-    let cleaned = client.cleanup_empty_categories();
-    assert_eq!(cleaned, 0); // merge_categories already updated master index
-}
-
         &Some(uri.clone()),
     );
     let quest = client.get_quest(&quest_id);
@@ -3095,7 +3100,7 @@ fn test_reenroll_allowed_when_cooldown_unset() {
     let (env, client, owner, token) = setup();
     let quest_id = create_quest_helper(&env, &client, &owner, &token);
 
-    assert_eq!(client.get_enrollment_cooldown(&quest_id), Ok(None));
+    assert_eq!(client.get_enrollment_cooldown(&quest_id), None);
 
     let enrollee = Address::generate(&env);
     client.add_enrollee(&quest_id, &enrollee);
@@ -3112,7 +3117,7 @@ fn test_reenroll_blocked_within_cooldown_period() {
     let quest_id = create_quest_helper(&env, &client, &owner, &token);
 
     client.set_enrollment_cooldown(&quest_id, &owner, &100);
-    assert_eq!(client.get_enrollment_cooldown(&quest_id), Ok(Some(100)));
+    assert_eq!(client.get_enrollment_cooldown(&quest_id), Some(100));
 
     let enrollee = Address::generate(&env);
     client.add_enrollee(&quest_id, &enrollee);
@@ -3164,5 +3169,5 @@ fn test_reenroll_cooldown_owner_only_and_disablable() {
     );
 
     client.set_enrollment_cooldown(&quest_id, &owner, &0);
-    assert_eq!(client.get_enrollment_cooldown(&quest_id), Ok(None));
+    assert_eq!(client.get_enrollment_cooldown(&quest_id), None);
 }

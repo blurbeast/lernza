@@ -2360,6 +2360,7 @@ impl MilestoneContract {
     /// let quest = Self::get_quest_and_verify_owner(&env, quest_id, &owner)?;
     /// // Now reuse quest_info for all subsequent operations
     /// ```
+    #[allow(dead_code)]
     fn get_quest_and_verify_owner(
         env: &Env,
         quest_id: u32,

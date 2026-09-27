@@ -1152,6 +1152,9 @@ fn test_distribute_reward_idempotent() {
         &String::from_str(&env, "Desc"),
         &100,
         &false,
+        &None,
+        &None,
+        &None,
     );
     quest_client.add_enrollee(&q_id, &enrollee);
     milestone_client.verify_completion(&owner, &q_id, &ms_id, &enrollee);
@@ -2329,7 +2332,7 @@ fn test_refund_pool_decrements_total_funded() {
 
     client.fund_quest(&owner, &q_id, &5_000);
     // TotalFunded should be 5_000.
-    let (_, total_funded, _) = client.get_platform_stats().unwrap();
+    let (_, total_funded, _) = client.get_platform_stats();
     assert_eq!(total_funded, 5_000);
     assert_eq!(client.get_quest_refunded(&q_id), 0);
 
@@ -2341,7 +2344,7 @@ fn test_refund_pool_decrements_total_funded() {
 
     // TotalFunded decreases by the refunded amount, and
     // QuestRefunded reflects the refunded amount.
-    let (_, total_funded, _) = client.get_platform_stats().unwrap();
+    let (_, total_funded, _) = client.get_platform_stats();
     assert_eq!(total_funded, 3_000);
     assert_eq!(client.get_quest_refunded(&q_id), 2_000);
 
@@ -2385,7 +2388,7 @@ fn test_get_platform_stats_returns_consistent_counters() {
 
     client.fund_quest(&owner, &q_id, &5_000);
 
-    let (quests, funded, distributed) = client.get_platform_stats().unwrap();
+    let (quests, funded, distributed) = client.get_platform_stats();
     assert_eq!(quests, 1);
     assert_eq!(funded, 5_000);
     assert_eq!(distributed, 0);
